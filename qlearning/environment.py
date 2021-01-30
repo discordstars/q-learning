@@ -1,4 +1,4 @@
-from typing import Any, Tuple
+from typing import Tuple
 
 import numpy as np
 from tensorflow.keras import Model
