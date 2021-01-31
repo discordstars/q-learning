@@ -196,7 +196,7 @@ class DQN:
             # Discard the memory increment value
             state, action, reward, new_state, done, _ = sample
             # The action taken by our target parameter
-            target = self.target_model(state)
+            target = self.target_model.predict(state)
             if done:
                 # If a terminal state, this is the ultimate reward
                 target[0][action] = reward
