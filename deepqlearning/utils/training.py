@@ -15,6 +15,7 @@ def iter_train(
     step_train_interval: Optional[int] = 200,
     train_batch_size: int = 32,
     yield_on_step: bool = False,
+    verbose: int = 0,
 ) -> Generator[Tuple[int, int, Tuple[np.ndarray, float, bool, dict]], None, None]:
     """
     An all-purpose DQN training generator. This performs the following
@@ -45,6 +46,8 @@ def iter_train(
         Number of memories to train with each time, by default 32
     yield_on_step : bool, optional
         Whether to yield on each step, by default False
+    verbose : int, optional
+        Verbosity parameter to pass to `replay_memory`, by default 0
 
     Yields
     -------
@@ -81,14 +84,14 @@ def iter_train(
             # If step training interval is not none and we're at that interval,
             # learn from given batch size
             if step_train_interval and steps % step_train_interval == 0:
-                dqn.replay_memory(batch_size=train_batch_size)
+                dqn.replay_memory(batch_size=train_batch_size, verbose=verbose)
                 dqn.target_train()
 
         # Yield trial #, total step count for this trial and empty memory
         yield trial, steps, []
 
         # Learn from given batch size
-        dqn.replay_memory(batch_size=train_batch_size)
+        dqn.replay_memory(batch_size=train_batch_size, verbose=verbose)
         dqn.target_train()
 
 
@@ -99,6 +102,7 @@ def train(
     trials: int = 5000,
     step_train_interval: Optional[int] = 200,
     train_batch_size: int = 32,
+    verbose: int = 0,
 ):
     """
     This function wraps `iter_train`, but doesn't yield. Instead it uses a
@@ -118,6 +122,8 @@ def train(
         The number of steps to take before training, by default 200
     train_batch_size : int, optional
         Number of memories to train with each time, by default 32
+    verbose : int, optional
+        Verbosity parameter to pass to `replay_memory`, by default 0
     """
     # Use empty deque to exhaust generator without caring about return values
     deque(
@@ -127,6 +133,7 @@ def train(
             trials=trials,
             step_train_interval=step_train_interval,
             train_batch_size=train_batch_size,
+            verbose=verbose
         ),
         maxlen=0,
     )

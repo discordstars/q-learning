@@ -49,6 +49,8 @@ class DQN:
         environment: DQNEnvironment,
         memory_size: int = 2000,
         params: DQNParams = DQNParams(),
+        initial_memory_size: int = 1000,
+        initial_memory_chance: float = 0.3,
     ) -> None:
         """
         Initialize a new DQN for an environment.
@@ -69,6 +71,17 @@ class DQN:
             The parameters for the training environment, by default DQNParams()
 
             The params must be an instance of DQNParams.
+        initial_memory_size : int, optional
+            The amount of memories from the first few rounds to store, by default 1000
+
+            This is used to counteract "catastrophic forgetting," and helps the DQN
+            keep its understanding of the game while learning.
+        initial_memory_chance : float, optional
+            The possibility of storing the initial memory, by default 0.1
+
+            This is the chance a memory will be stored into `initial_memories`
+            if it is not already `initial_memory_size` in length. The bigger
+            this value is, the quicker `initial_memories` will fill up.
         """
         if not isinstance(environment, DQNEnvironment):
             raise ValueError(
@@ -84,6 +97,11 @@ class DQN:
         self.env = environment
         self.memory = deque(maxlen=memory_size)
         self.memory_increment = 0
+        self.initial_memories = deque(
+            maxlen=initial_memory_size
+        )  # deque for concatenation
+        self.initial_memory_size = initial_memory_size
+        self.initial_memory_chance = initial_memory_chance
 
         self.epsilon = params.epsilon
         self.epsilon_min = params.epsilon_min
@@ -131,7 +149,15 @@ class DQN:
         """
         self.memory_increment += 1
         memory = [state, action, reward, new_state, done, self.memory_increment]
-        self.memory.append(memory)
+
+        # If part of "initial" memories, store seperately
+        if (
+            len(self.initial_memories) < self.initial_memory_size
+            and np.random.random() < self.initial_memory_chance
+        ):
+            self.initial_memories.append(memory)
+        else:
+            self.memory.append(memory)
         return memory[-1], memory[:-1]
 
     def update_reward(
@@ -171,7 +197,7 @@ class DQN:
                 # Don't return the memory increment
                 return memory[:-1]
 
-    def replay_memory(self, batch_size: int = 32):
+    def replay_memory(self, batch_size: int = 32, verbose: int = 0):
         """
         Train the model on `batch_size` memories, using the target model to
         predict the reward if the memory isn't an end state.
@@ -184,13 +210,22 @@ class DQN:
         ----------
         batch_size : int, optional
             Number of memories to use, by default 32
+        verbose : int, optional
+            Verbosity parameter to pass to `Model.fit`, by default 0
+
+            Documentation pulled from TensorFlow docs:
+            0, 1, or 2. Verbosity mode. 0 = silent, 1 = progress bar, 2 = one
+            line per epoch. Note that the progress bar is not particularly
+            useful when logged to a file, so verbose=2 is recommended when not
+            running interactively (eg, in a production environment).
         """
         if len(self.memory) < batch_size:
             # Don't train if memory too small
             return
 
         # Get a random batch of memories to use to train
-        samples = random.sample(self.memory, batch_size)
+        # Also consider initial memories
+        samples = random.sample(self.memory + self.initial_memories, batch_size)
         for sample in samples:
             # Discard the memory increment value
             state, action, reward, new_state, done, _ = sample
@@ -208,7 +243,7 @@ class DQN:
                 target[0][action] = reward + Q_future * self.gamma
 
             # Train for one epoch
-            self.model.fit(state, target, epochs=1, verbose=0)
+            self.model.fit(state, target, epochs=1, verbose=verbose)
 
     def target_train(self):
         """
