@@ -15,7 +15,7 @@ def iter_train(
     step_train_interval: Optional[int] = 200,
     train_batch_size: int = 32,
     yield_on_step: bool = False,
-) -> Generator[Tuple[int, int, Tuple[np.ndarray, float, bool, dict]]]:
+) -> Generator[Tuple[int, int, Tuple[np.ndarray, float, bool, dict]], None, None]:
     """
     An all-purpose DQN training generator. This performs the following
     procedure `trial` times.
