@@ -107,7 +107,7 @@ class DQN:
         reward: float,
         new_state: np.ndarray,
         done: bool,
-    ) -> int:
+    ) -> Tuple[int, Tuple[np.ndarray, float, bool, dict]]:
         """
         Store this memory and return the memory increment that refers to it
 
@@ -130,10 +130,9 @@ class DQN:
             The ID of the memory (can be used with `update_reward`)
         """
         self.memory_increment += 1
-        self.memory.append(
-            [state, action, reward, new_state, done, self.memory_increment]
-        )
-        return self.memory_increment
+        memory = [state, action, reward, new_state, done, self.memory_increment]
+        self.memory.append(memory)
+        return memory[-1], memory[:-1]
 
     def update_reward(
         self, memory_id: int, reward: float, increment: bool = False
