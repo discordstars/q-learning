@@ -84,7 +84,7 @@ class DQNEnvironment:
         """
         raise NotImplementedError()
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset the current game state to what it would be at the start of a
         game. This should discard any round specific information and reset

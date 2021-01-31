@@ -42,13 +42,14 @@ class DQNParams:
 
 
 class DQN:
+    # Basic concept designed around the following article
     # https://towardsdatascience.com/reinforcement-learning-w-keras-openai-dqns-1eed3a5338c
     def __init__(
         self,
         environment: DQNEnvironment,
         memory_size: int = 2000,
         params: DQNParams = DQNParams(),
-    ):
+    ) -> None:
         """
         Initialize a new DQN for an environment.
 
@@ -172,6 +173,19 @@ class DQN:
                 return memory[:-1]
 
     def replay_memory(self, batch_size: int = 32):
+        """
+        Train the model on `batch_size` memories, using the target model to
+        predict the reward if the memory isn't an end state.
+
+        In non-terminal states, it uses the discount factor for any future
+        reward estimates and adds the reward of the round plus the
+        Q_future reward as the new estimated reward.
+
+        Parameters
+        ----------
+        batch_size : int, optional
+            Number of memories to use, by default 32
+        """
         if len(self.memory) < batch_size:
             # Don't train if memory too small
             return
@@ -245,7 +259,7 @@ class DQN:
 
     def save_model(self, fn: str):
         """
-        Save this model to the given location.
+        Save this model to the given path.
 
         Parameters
         ----------
