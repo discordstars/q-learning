@@ -69,13 +69,13 @@ def iter_train(
             new_state, reward, done, data = environment.step(
                 action, memory_increment=dqn.memory_increment + 1
             )
-
             # Allows the step function to update rewards
             for reward_update in data.get("reward_updates", []):
                 dqn.update_reward(**reward_update)
 
             # Store the new memory
             _, memory = dqn.store_memory(cur_state, action, reward, new_state, done)
+            cur_state = new_state
 
             # Yield trial #, step # and last memory
             if yield_on_step:
